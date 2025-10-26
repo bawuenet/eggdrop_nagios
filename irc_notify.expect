@@ -1,0 +1,39 @@
+#!/usr/bin/expect -f
+#
+# Nagios notification handler for eggdrop .nagios
+#
+# Configurable parameters
+set timeout 10
+set eggdrop_host "example.com"
+set port 5555
+set user "nagios"
+set pass "secret"
+
+# Args from Nagios
+set notification_type [lindex $argv 0]
+set host [lindex $argv 1]
+set service [lindex $argv 2]
+set state [lindex $argv 3]
+set output [lindex $argv 4]
+
+# Connect to eggdrop
+spawn telnet $eggdrop_host $port
+expect "Nickname."
+send "$user\n"
+expect "Enter your password."
+send "$pass\n"
+expect "joined the party line."
+
+# Host notification
+if {$service eq "Host"} {
+    set msg "$host: $output"
+# Service notification
+} else {
+    set msg "$host | $service: $output"
+}
+
+# Send message
+send ".nagios $notification_type $state $msg\n"
+expect "Sent to"
+send ".quit\n"
+expect eof
